@@ -1,17 +1,20 @@
 'use strict';
 
-let currentState = {};
+let trackInfo = {};
 let isPlaying = false;
 
-const vkFilter = new MetadataFilter({
-	all: MetadataFilter.decodeHtmlEntities
-});
+const vkFilter = MetadataFilter.createFilter(
+	MetadataFilter.createFilterSetForFields(
+		['artist', 'track', 'album', 'albumArtist'],
+		MetadataFilter.decodeHtmlEntities
+	)
+).extend(MetadataFilter.getRemasteredFilter());
 
 Connector.isPlaying = () => isPlaying;
 
-Connector.getCurrentState = () => currentState;
+Connector.getTrackInfo = () => trackInfo;
 
-Connector.onScriptEvent = function(event) {
+Connector.onScriptEvent = (event) => {
 	switch (event.data.type) {
 		case 'start':
 			isPlaying = true;
@@ -22,16 +25,10 @@ Connector.onScriptEvent = function(event) {
 			break;
 	}
 
-	currentState = event.data.trackInfo;
-	currentState.isPlaying = isPlaying;
+	trackInfo = event.data.trackInfo;
 
-	this.onStateChanged();
-// @ifndef FIREFOX
+	Connector.onStateChanged();
 };
-// @endif
-/* @ifdef FIREFOX
-}.bind(Connector);
-/* @endif */
 
 Connector.injectScript('connectors/vk-dom-inject.js');
 

@@ -1,72 +1,25 @@
 'use strict';
 
-function setupAudioPlayer() {
-	const filter = new MetadataFilter({
-		track: cleanupTrack,
-		artist: cleanupArtist
-	});
+/*
+ * This connector covers archived tracks only. A `radiorethink` connector
+ * is used to get track info from WFMU main streams.
+ */
 
-	Connector.playerSelector = '.audioplayer';
+const filter = MetadataFilter.createFilter({
+	track: cleanupTrack,
+});
 
-	Connector.artistSelector = '#current-title';
+Connector.playerSelector = '.archiveplayer';
 
-	Connector.trackSelector = '#current-title';
+Connector.artistSelector = '#np-artist';
 
-	Connector.isPlaying = () => $('.mejs-playpause-button').hasClass('mejs-pause');
+Connector.trackSelector = '#np-song';
 
-	Connector.applyFilter(filter);
-}
+Connector.playButtonSelector = '.mejs-play';
 
-function setupArchivePlayer() {
-	const filter = new MetadataFilter({
-		track: cleanupTrack
-	});
-
-	Connector.playerSelector = '.archiveplayer';
-
-	Connector.artistSelector = '#np-artist';
-
-	Connector.trackSelector = '#np-song';
-
-	Connector.isPlaying = () => $('.mejs-playpause-button').hasClass('mejs-pause');
-
-	Connector.applyFilter(filter);
-}
-
-
+Connector.applyFilter(filter);
 
 function cleanupTrack(track) {
-	// extract track from a "track" by artist
-	track = track.replace(/(")(.*)(")( by )(.*)/g, '$2');
-
-	return track;
+	// Extract a track title from a `"Track" by Artist` string.
+	return track.replace(/(")(.*)(")( by )(.*)/g, '$2');
 }
-
-function cleanupArtist(artist) {
-	// extract artist from a "track" by artist
-	artist = artist.replace(/(")(.*)(")( by )(.*)/g, '$5');
-
-	return artist;
-}
-
-
-
-function isAudioPlayer() {
-	return $('body').hasClass('audioplayer');
-}
-
-function isArchivePlayer() {
-	return $('body').hasClass('archiveplayer');
-}
-
-function setupConnector() {
-	if (isArchivePlayer()) {
-		setupArchivePlayer();
-	} else if (isAudioPlayer()) {
-		setupAudioPlayer();
-	} else {
-		console.warn('WFMU connector: unknown player');
-	}
-}
-
-setupConnector();

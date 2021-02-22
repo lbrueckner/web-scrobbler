@@ -25,20 +25,24 @@ function sendEvent() {
 	window.postMessage({
 		sender: 'web-scrobbler',
 		type: 'MUSICKIT_STATE',
-		state: getState(),
+		trackInfo: getTrackInfo(),
+		isPlaying: isPlaying(),
 	}, '*');
 }
 
-function getState() {
+function getTrackInfo() {
 	const item = player().nowPlayingItem;
 	return {
-		albumName: item.albumName,
-		artistName: item.artistName,
-		artworkURL: item.artworkURL,
-		title: item.title,
+		album: item.albumName,
+		track: item.title,
+		artist: item.artistName,
+		trackArt: item.artworkURL,
 		duration: player().currentPlaybackDuration,
+		uniqueID: item.id,
 		currentTime: player().currentPlaybackTime,
-		isPlaying: player().isPlaying,
-		id: item.id,
 	};
+}
+
+function isPlaying() {
+	return player().isPlaying;
 }

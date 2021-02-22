@@ -5,51 +5,47 @@
  */
 
 define((require) => {
-	const ChromeStorage = require('storage/chrome-storage');
-	const ScrobbleService = require('service/scrobble-service');
+	const Options = require('storage/options');
+	const ScrobbleService = require('object/scrobble-service');
 
-	const options = ChromeStorage.getStorage(ChromeStorage.OPTIONS);
-
-	const infoToCopy = [
-		'duration', 'artist', 'track'
+	const INFO_TO_COPY = [
+		'duration', 'artist', 'track',
 	];
-	const metadataToCopy = [
-		'artistThumbUrl', 'artistUrl', 'trackUrl', 'albumUrl'
+	const METADATA_TO_COPY = [
+		'trackArtUrl', 'artistUrl', 'trackUrl',
+		'albumUrl', 'userPlayCount', 'albumMbId',
 	];
 
 	/**
 	 * Load song info using ScrobblerService object.
 	 * @param  {Object} song Song instance
-	 * @return {Promise} Promise resolved when task has complete
 	 */
-	function process(song) {
+	async function process(song) {
 		if (song.isEmpty()) {
-			return Promise.resolve(false);
+			return;
 		}
 
-		return ScrobbleService.getSongInfo(song).then((songInfoArr) => {
-			for (let field of metadataToCopy) {
-				delete song.metadata[field];
-			}
-
-			let songInfo = getInfo(songInfoArr);
-			let isSongValid = songInfo !== null;
-			if (isSongValid) {
-				for (let field of infoToCopy) {
+		const songInfoArr = await ScrobbleService.getSongInfo(song);
+		const songInfo = getInfo(songInfoArr);
+		const isSongValid = songInfo !== null;
+		if (isSongValid) {
+			if (!song.flags.isCorrectedByUser) {
+				for (const field of INFO_TO_COPY) {
 					song.processed[field] = songInfo[field];
 				}
-				for (let field of metadataToCopy) {
-					song.metadata[field] = songInfo[field];
-				}
+
 				if (!song.getAlbum()) {
 					song.processed.album = songInfo.album;
 				}
 			}
 
-			return options.get().then((data) => {
-				song.flags.isValid = isSongValid || data.forceRecognize;
-			});
-		});
+			for (const field of METADATA_TO_COPY) {
+				song.metadata[field] = songInfo[field];
+			}
+		}
+
+		const forceRecognize = await Options.getOption(Options.FORCE_RECOGNIZE);
+		song.flags.isValid = isSongValid || forceRecognize;
 	}
 
 	/**
@@ -80,7 +76,7 @@ define((require) => {
 	 */
 	function getNonEmptyKeyCount(obj) {
 		let keyCount = 0;
-		for (let key in obj) {
+		for (const key in obj) {
 			if (obj[key]) {
 				++keyCount;
 			}

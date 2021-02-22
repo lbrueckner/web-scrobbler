@@ -1,16 +1,15 @@
 'use strict';
 
-Connector.artistSelector = '.track-artist';
+Connector.artistSelector = '.action-artist';
 
-Connector.trackSelector = '.track-title';
+Connector.trackSelector = '.action-title';
 
-Connector.currentTimeSelector = '.position';
+Connector.playerSelector = '.player-wrapper';
 
-Connector.playButtonSelector = '.play-pause-button.paused';
+Connector.trackArtSelector = '.track-coverart';
 
-Connector.playerSelector = '#player > ul';
+Connector.currentTimeSelector = '.main-player .duration-text:first-child';
 
-Connector.getTrackArt = () => {
-	// Remove image resize parameter
-	return $('.cover-art > img').attr('src').split('&')[0];
-};
+Connector.durationSelector = '.main-player .duration-text:last-child';
+
+Connector.playButtonSelector = '.player-controls .icon.play';

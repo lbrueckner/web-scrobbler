@@ -14,7 +14,7 @@ function isYoutubePlayer() {
 }
 
 function setupYoutubePlayer() {
-	Connector.playerSelector = '#main';
+	Connector.playerSelector = '#youtube_player';
 
 	Connector.isPlaying = () => $('#mix_youtube').hasClass('playing');
 
@@ -39,7 +39,7 @@ function setupCommonProperties() {
 	Connector.trackArtSelector = '#player_mix img';
 
 	Connector.getUniqueID = () => {
-		let trackId = $('.track_details').attr('id');
+		const trackId = $('.track_details').attr('id');
 		if (trackId) {
 			return trackId.replace('track_details_', '');
 		}

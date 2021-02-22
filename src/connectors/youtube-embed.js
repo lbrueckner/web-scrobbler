@@ -11,15 +11,17 @@
 const VIDEO_SELECTOR = '.html5-main-video';
 
 function setupConnector() {
-	let videoElement = $(VIDEO_SELECTOR);
+	const videoElement = $(VIDEO_SELECTOR);
 	// Skip frames with no video element
 	if (videoElement.length === 0) {
 		return;
 	}
 
+	videoElement.on('timeupdate', Connector.onStateChanged);
+
 	Connector.getArtistTrack = () => {
-		let videoTitle = $('.ytp-title-link').text();
-		return Util.processYoutubeVideoTitle(videoTitle);
+		const videoTitle = $('.ytp-title-link').text();
+		return Util.processYtVideoTitle(videoTitle);
 	};
 
 	Connector.getCurrentTime = () => videoElement.prop('currentTime');
@@ -31,32 +33,11 @@ function setupConnector() {
 	};
 
 	Connector.getUniqueID = () => {
-		let videoUrl = $('.ytp-title-link').attr('href');
-		return Util.getYoutubeVideoIdFromUrl(videoUrl);
+		const videoUrl = $('.ytp-title-link').attr('href');
+		return Util.getYtVideoIdFromUrl(videoUrl);
 	};
 
-	Connector.filter = MetadataFilter.getYoutubeFilter();
-
-	setupMutationObserver();
-}
-
-function setupMutationObserver() {
-	let observer = new MutationObserver(() => {
-		let videoElement = $(VIDEO_SELECTOR);
-
-		if (videoElement.length > 0) {
-			videoElement.on('timeupdate', Connector.onStateChanged);
-			observer.disconnect();
-
-			console.log('Web Scrobbler: Setup "timeupdate" event listener');
-		}
-	});
-	observer.observe(document, {
-		subtree: true,
-		childList: true,
-		attributes: false,
-		characterData: false
-	});
+	Connector.applyFilter(MetadataFilter.getYoutubeFilter());
 }
 
 setupConnector();

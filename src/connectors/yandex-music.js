@@ -1,23 +1,23 @@
 'use strict';
 
-Connector.playerSelector = '.player-controls';
+let trackInfo = {};
+let isPlaying = false;
 
-Connector.artistSelector = '.track_type_player .track__artists';
+Connector.isPlaying = () => isPlaying;
 
-Connector.trackSelector = '.track_type_player .track__title';
+Connector.getTrackInfo = () => trackInfo;
 
-Connector.currentTimeSelector = '.progress__left';
+Connector.onScriptEvent = (e) => {
+	switch (e.data.type) {
+		case 'YANDEX_MUSIC_STATE':
+			trackInfo = e.data.trackInfo;
+			isPlaying = e.data.isPlaying;
 
-Connector.durationSelector = '.progress__right';
-
-Connector.getUniqueID = () => {
-	let trackUrl = $('.track_type_player .track__title').attr('href');
-	if (trackUrl) {
-		return trackUrl.split('/').pop();
+			Connector.onStateChanged();
+			break;
+		default:
+			break;
 	}
-	return null;
 };
 
-Connector.isPlaying = () => {
-	return $('.player-controls__btn_play').hasClass('player-controls__btn_pause');
-};
+Connector.injectScript('connectors/yandex-music-dom-inject.js');

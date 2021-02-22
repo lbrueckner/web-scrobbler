@@ -16,8 +16,8 @@ Connector.trackSelector = '.heading-group .fill_song';
 
 Connector.getAlbum = () => {
 	// Artist / Album
-	let artistAlbumStr = $('#artist').text();
-	let artistSlash = `${Connector.getArtist()} / `;
+	const artistAlbumStr = $('#artist').text();
+	const artistSlash = `${Connector.getArtist()} / `;
 	if (artistAlbumStr && artistAlbumStr.includes(artistSlash)) {
 		return artistAlbumStr.replace(artistSlash, '');
 	}
@@ -31,4 +31,4 @@ Connector.isTrackArtDefault = (trackArtUrl) => {
 	return trackArtUrl.endsWith(DEFAULT_TRACK_ART);
 };
 
-Connector.isPlaying = () => $('#playbtn').hasClass('jp-stopx');
+Connector.pauseButtonSelector = '#playbtn.jp-stopx';

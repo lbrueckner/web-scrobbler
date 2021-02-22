@@ -1,87 +1,87 @@
 'use strict';
 
-const CATEGORY_MUSIC = '10';
-const CATEGORY_ENTERTAINMENT = '24';
-
-/**
- * Array of categories allowed to be scrobbled.
- * @type {Array}
- */
-let allowedCategories = [];
-
-/**
- * "Video Id=Category" map.
- * @type {Map}
- */
-let categoryCache = new Map();
-
 /**
  * CSS selector of video element. It's common for both players.
  * @type {String}
  */
 const videoSelector = '.html5-main-video';
 
+const chapterNameSelector = '.html5-video-player .ytp-chapter-title-content';
+const videoTitleSelector = '.html5-video-player .ytp-title-link';
+const channelNameSelector = '#top-row .ytd-channel-name a';
+const videoDescriptionSelector = '#meta-contents #description';
+
+// Dummy category indicates an actual category is being fetched
+const categoryPending = 'YT_DUMMY_CATEGORY_PENDING';
+// Fallback value in case when we cannot fetch a category.
+const categoryUnknown = 'YT_DUMMY_CATEGORY_UNKNOWN';
+
+const categoryMusic = 'Music';
+const categoryEntertainment = 'Entertainment';
+
 /**
- * Youtube API key used to get video category.
- * @type {String}
+ * Array of categories allowed to be scrobbled.
+ * @type {Array}
  */
-const YT_API_KEY = 'AIzaSyA3VNMxXEIr7Ml3_zUuzA7Ilba80A657KE';
+const allowedCategories = [];
+
+/**
+ * "Video Id=Category" map.
+ * @type {Map}
+ */
+const categoryCache = new Map();
+
+let currentVideoDescription = null;
+let artistTrackFromDescription = null;
+
+const trackInfoGetters = [
+	getTrackInfoFromChapters,
+	getTrackInfoFromDescription,
+	getTrackInfoFromTitle,
+];
 
 readConnectorOptions();
-setupMutationObserver();
+setupEventListener();
 
-Connector.getArtistTrack = () => {
-	/*
-	 * Youtube doesn't remove DOM object on AJAX navigation,
-	 * so we should not return track data if no song is playing.
-	 */
-	if (Connector.isPlayerOffscreen()) {
-		return Util.makeEmptyArtistTrack();
+Connector.playerSelector = '#content';
+
+Connector.getTrackInfo = () => {
+	const trackInfo = {};
+
+	for (const getter of trackInfoGetters) {
+		const currentTrackInfo = getter();
+		if (!currentTrackInfo) {
+			continue;
+		}
+
+		if (!trackInfo.artist) {
+			trackInfo.artist = currentTrackInfo.artist;
+		}
+
+		if (!trackInfo.track) {
+			trackInfo.track = currentTrackInfo.track;
+		}
+
+		if (!Util.isArtistTrackEmpty(trackInfo)) {
+			break;
+		}
 	}
 
-	return getArtistTrack();
+	return trackInfo;
 };
 
-/**
- * Check if player is off screen.
- *
- * YouTube doesn't really unload the player. It simply moves it outside
- * viewport. That has to be checked, because our selectors are still able
- * to detect it.
- *
- * @return {Boolean} True if player is off screen; false otherwise
- */
-Connector.isPlayerOffscreen = () => {
-	if (Connector.isFullscreenMode()) {
-		return false;
+Connector.getTimeInfo = () => {
+	const videoElement = document.querySelector(videoSelector);
+	if (videoElement && !areChaptersAvailable()) {
+		let { currentTime, duration, playbackRate } = videoElement;
+
+		currentTime /= playbackRate;
+		duration /= playbackRate;
+
+		return { currentTime, duration };
 	}
 
-	let videoElement = $(videoSelector);
-	if (videoElement.length === 0) {
-		return false;
-	}
-
-	let offset = videoElement.offset();
-	return offset.left <= 0 && offset.top <= 0;
-};
-
-/*
- * Because player can be still present in the page, we need to detect
- * that it's invisible and don't return current time. Otherwise resulting
- * state may not be considered empty.
- */
-Connector.getCurrentTime = () => {
-	if (Connector.isPlayerOffscreen()) {
-		return null;
-	}
-	return $(videoSelector).prop('currentTime');
-};
-
-Connector.getDuration = () => {
-	if (Connector.isPlayerOffscreen()) {
-		return null;
-	}
-	return $(videoSelector).prop('duration');
+	return null;
 };
 
 Connector.isPlaying = () => {
@@ -89,160 +89,206 @@ Connector.isPlaying = () => {
 };
 
 Connector.getUniqueID = () => {
-	/*
-	 * Youtube doesn't remove DOM object on AJAX navigation,
-	 * so we should not return track data if no song is playing.
-	 */
-	if (Connector.isPlayerOffscreen()) {
+	if (areChaptersAvailable()) {
 		return null;
 	}
 
-	/*
-	 * Youtube doesn't update video title immediately in fullscreen mode.
-	 * We don't return video ID until video title is shown.
-	 */
-	if (Connector.isFullscreenMode()) {
-		let videoTitle = $('.html5-video-player.playing-mode .ytp-title-link').text();
-		if (!videoTitle) {
-			return null;
-		}
-	}
-
-	let videoUrl = $('.html5-video-player.playing-mode .ytp-title-link').attr('href');
-	return Util.getYoutubeVideoIdFromUrl(videoUrl);
+	return getVideoId();
 };
 
 Connector.isScrobblingAllowed = () => {
-	if ($('.videoAdUi').length > 0) {
+	if ($('.ad-showing').length > 0) {
 		return false;
 	}
 
-	// FIXME: Workaround to prevent scrobbling the vidio opened in a background tab.
-	if (Connector.getCurrentTime() < 1) {
+	// Workaround to prevent scrobbling the video opened in a background tab.
+	if (!isVideoStartedPlaying()) {
 		return false;
 	}
 
-	if (allowedCategories.length === 0) {
-		return true;
-	}
-
-	let videoCategory = getVideoCategory(Connector.getUniqueID());
-	if (videoCategory !== null) {
-		return allowedCategories.includes(videoCategory);
-	}
-
-	return false;
+	return isVideoCategoryAllowed();
 };
 
-Connector.filter = MetadataFilter.getYoutubeFilter();
+Connector.applyFilter(
+	MetadataFilter.getYoutubeFilter().append({
+		artist: [removeLtrRtlChars, removeNumericPrefix],
+		track: [removeLtrRtlChars, removeNumericPrefix],
+	})
+);
 
-Connector.isFullscreenMode = () => {
-	return $('.html5-video-player').hasClass('ytp-fullscreen');
-};
-
-/**
- * @typedef {Object} ArtistTrack
- * @property {string} artist The track's artist
- * @property {string} track The track's title
- */
-
-/**
- * Parse webpage and return track Artist and Title
- * @return {ArtistTrack} The track's Artist and Title
- */
-function getArtistTrack() {
-	let videoTitle = $('.html5-video-player.playing-mode .ytp-title-link').text();
-	let byLineMatch = $('#meta-contents #owner-name a').text().match(/(.+) - Topic/);
-	if (byLineMatch) {
-		return { artist: byLineMatch[1], track: videoTitle };
-	}
-	return Util.processYoutubeVideoTitle(videoTitle);
+function setupEventListener() {
+	$(videoSelector).on('timeupdate', Connector.onStateChanged);
 }
 
-/**
- * Get video category using Youtube API.
- * @param  {String} videoId Video ID
- * @return {String} Video category
- */
-function getVideoCategory(videoId) {
-	if (videoId === null) {
+function areChaptersAvailable() {
+	return Util.getTextFromSelectors(chapterNameSelector);
+}
+
+function getVideoId() {
+	/*
+	 * ytd-watch-flexy element contains ID of a first played video
+	 * if the miniplayer is visible, so we should check
+	 * if URL of a current video in miniplayer is accessible.
+	 */
+	const miniPlayerVideoUrl = Util.getAttrFromSelectors(
+		'ytd-miniplayer[active] [selected] a',
+		'href'
+	);
+	if (miniPlayerVideoUrl) {
+		return Util.getYtVideoIdFromUrl(miniPlayerVideoUrl);
+	}
+
+	return Util.getAttrFromSelectors('ytd-watch-flexy', 'video-id');
+}
+
+function getVideoCategory() {
+	const videoId = getVideoId();
+
+	if (!videoId) {
 		return null;
 	}
-	if (!categoryCache.has(videoId)) {
-		const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YT_API_KEY}`;
-		fetch(url).then((response) => {
-			if (!response.ok) {
-				throw new Error('Invalid response');
-			}
-			return response.json();
-		}).then((data) => {
-			let category = data.items[0].snippet.categoryId;
-			if (typeof category === 'string') {
-				categoryCache.set(videoId, category);
-			}
-		}).catch((err) => {
-			console.log(`Unable to get category for ${videoId}: ${err.message}`);
+
+	if (categoryCache.has(videoId)) {
+		return categoryCache.get(videoId);
+	}
+
+	/*
+	 * Add dummy category for videoId to prevent
+	 * fetching category multiple times.
+	 */
+	categoryCache.set(videoId, categoryPending);
+
+	fetchCategoryName(videoId)
+		.then((category) => {
+			Util.debugLog(`Fetched category for ${videoId}: ${category}`);
+			categoryCache.set(videoId, category);
+		})
+		.catch((err) => {
+			Util.debugLog(
+				`Failed to fetch category for ${videoId}: ${err}`,
+				'warn'
+			);
+			categoryCache.set(videoId, categoryUnknown);
 		});
-		return null;
-	}
-	return categoryCache.get(videoId);
 
+	return null;
 }
 
-function setupMutationObserver() {
-	let isEventListenerSetUp = false;
+async function fetchCategoryName(videoId) {
+	/*
+	 * We cannot use `location.href`, since it could miss the video URL
+	 * in case when YouTube mini player is visible.
+	 */
+	const videoUrl = `${location.origin}/watch?v=${videoId}`;
 
-	function onMutation() {
-		let videoElement = $(videoSelector);
+	try {
+		/*
+		 * Category info is not available via DOM API, so we should search it
+		 * in a page source.
+		 *
+		 * But we cannot use `document.documentElement.outerHtml`, since it
+		 * is not updated on video change.
+		 */
+		const response = await fetch(videoUrl);
+		const rawHtml = await response.text();
 
-		if (videoElement.length > 0) {
-			if (!videoElement.is(':visible')) {
-				Connector.resetState();
-				return;
-			}
-
-			if (isEventListenerSetUp) {
-				return;
-			}
-
-			videoElement.on('timeupdate', Connector.onStateChanged);
-			isEventListenerSetUp = true;
-
-			console.log('Web Scrobbler: Setup "timeupdate" event listener');
-		} else {
-			Connector.resetState();
-			isEventListenerSetUp = false;
-
-			console.warn('Web Scrobbler: Video element is missing');
+		const categoryMatch = rawHtml.match(/"category":"(.+?)"/);
+		if (categoryMatch !== null) {
+			return categoryMatch[1];
 		}
+	} catch (e) {
+		// Do nothing
 	}
 
-	let observer = new MutationObserver(Util.throttle(onMutation, 500));
-	observer.observe(document, {
-		subtree: true,
-		childList: true,
-		attributes: false,
-		characterData: false
-	});
+	return categoryUnknown;
 }
 
 /**
  * Asynchronously read connector options.
  */
-function readConnectorOptions() {
-	chrome.storage.sync.get('Connectors', (data) => {
-		if (data && data.Connectors && data.Connectors.YouTube) {
-			let options = data.Connectors.YouTube;
+async function readConnectorOptions() {
+	if (await Util.getOption('YouTube', 'scrobbleMusicOnly')) {
+		allowedCategories.push(categoryMusic);
+	}
+	if (await Util.getOption('YouTube', 'scrobbleEntertainmentOnly')) {
+		allowedCategories.push(categoryEntertainment);
+	}
+	Util.debugLog(`Allowed categories: ${allowedCategories.join(', ')}`);
+}
 
-			if (options.scrobbleMusicOnly) {
-				allowedCategories.push(CATEGORY_MUSIC);
-			}
-			if (options.scrobbleEntertainmentOnly) {
-				allowedCategories.push(CATEGORY_ENTERTAINMENT);
-			}
+function getVideoDescription() {
+	return Util.getTextFromSelectors(videoDescriptionSelector);
+}
 
-			let optionsStr = JSON.stringify(options, null, 2);
-			console.log(`Web Scrobbler: Connector options: ${optionsStr}`);
-		}
-	});
+function getTrackInfoFromDescription() {
+	const description = getVideoDescription();
+	if (currentVideoDescription === description) {
+		return artistTrackFromDescription;
+	}
+
+	currentVideoDescription = description;
+	artistTrackFromDescription = Util.parseYtVideoDescription(description);
+
+	return artistTrackFromDescription;
+}
+
+function getTrackInfoFromChapters() {
+	const chapterName = Util.getTextFromSelectors(chapterNameSelector);
+	const artistTrack = Util.splitArtistTrack(chapterName);
+	if (!artistTrack.track) {
+		artistTrack.track = chapterName;
+	}
+	return artistTrack;
+}
+
+function getTrackInfoFromTitle() {
+	let { artist, track } = Util.processYtVideoTitle(
+		Util.getTextFromSelectors(videoTitleSelector)
+	);
+	if (!artist) {
+		artist = Util.getTextFromSelectors(channelNameSelector);
+	}
+
+	return { artist, track };
+}
+
+function removeLtrRtlChars(text) {
+	return MetadataFilter.filterWithFilterRules(text, [
+		{ source: /\u200e/g, target: '' },
+		{ source: /\u200f/g, target: '' },
+	]);
+}
+
+function removeNumericPrefix(text) {
+	return MetadataFilter.filterWithFilterRules(text, [
+		// `NN.` or `NN)`
+		{ source: /^\d{1,2}[.)]\s?/, target: '' },
+		/*
+		 * `(NN).` Ref: https://www.youtube.com/watch?v=KyabZRQeQgk
+		 * NOTE Initial tracklist format is (NN)  dd:dd  Artist - Track
+		 * YouTube adds a dot symbol after the numeric prefix.
+		 */
+		{ source: /^\(\d{1,2}\)\./, target: '' },
+	]);
+}
+
+function isVideoStartedPlaying() {
+	const videoElement = document.querySelector(videoSelector);
+	return videoElement && videoElement.currentTime > 0;
+}
+
+function isVideoCategoryAllowed() {
+	if (allowedCategories.length === 0) {
+		return true;
+	}
+
+	const videoCategory = getVideoCategory();
+	if (!videoCategory) {
+		return false;
+	}
+
+	return (
+		allowedCategories.includes(videoCategory) ||
+		videoCategory === categoryUnknown
+	);
 }

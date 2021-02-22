@@ -1,10 +1,32 @@
-build
-nbproject
-node_modules
+# Build
+/build/
+/*.zip
+
+# IDE
+/.idea/
+/nbproject/
+/.tern-project
+/*.iml
+
+# OS
 .DS_Store
-.idea
-.publish
-.tern-project
-*.iml
-*.zip
-*.log
+
+# Vendor
+/node_modules/
+/src/vendor/
+3RD-PARTY.md
+
+# Private
+.env
+
+# Other
+/*.log
+
+# Coverage
+.codacy-coverage/
+.nyc_output/
+.nyc_cache/
+coverage/
+
+# Cache
+.eslintcache

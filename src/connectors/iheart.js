@@ -1,17 +1,17 @@
 'use strict';
 
-Connector.playerSelector = '[data-test="mini-player-container"]';
+const playerBar = '[class*=BottomFixed]';
+const controlBar = '[data-test=controls-container]';
 
-Connector.playButtonSelector = 'button[data-test="play-button"]';
+Connector.playerSelector = playerBar;
 
-Connector.artistSelector = '[data-test="mini-player-description-text"] [title]';
+Connector.pauseButtonSelector = `${controlBar} button[data-test-state=PLAYING]`;
 
-Connector.trackSelector = '[data-test="mini-player-track-text"] [title]';
+Connector.artistSelector = `${playerBar} [data-test=line-text]:nth-child(3)`;
 
-Connector.isStateChangeAllowed = Connector.isPlaying = () => {
-	let track = Connector.getTrack();
-	if (track) {
-		return !track.startsWith('Thanks for listening');
-	}
-	return false;
+Connector.trackSelector = `${playerBar} [data-test=line-text]:nth-child(2)`;
+
+Connector.isScrobblingAllowed = () => {
+	const track = Connector.getTrack();
+	return track && !track.startsWith('Thanks for listening');
 };

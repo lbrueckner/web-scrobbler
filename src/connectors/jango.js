@@ -1,9 +1,11 @@
 'use strict';
 
-Connector.playerSelector = '#masthead';
+Connector.playerSelector = '#player_main_row';
 
-Connector.artistSelector = '#player_current_artist a';
+Connector.trackSelector = '#player_info :nth-child(2)';
 
-Connector.trackSelector = '#current-song';
+Connector.artistSelector = '#player_info :nth-child(3)';
 
-Connector.isPlaying = () => $('#btn-playpause').hasClass('pause');
+Connector.trackArtSelector = '#player_album_art';
+
+Connector.pauseButtonSelector = '#big_pp.pause';

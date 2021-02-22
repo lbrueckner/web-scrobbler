@@ -1,9 +1,30 @@
 'use strict';
 
+const filter = MetadataFilter.createFilter(
+	MetadataFilter.createFilterSetForFields(
+		['artist', 'track', 'album', 'albumArtist'],
+		trimSpaces
+	)
+);
+
+const filterRules = [
+	{ source: /\t/g, target: ' ' },
+	{ source: /\n/g, target: ' ' },
+	{ source: /\s+/g, target: ' ' },
+];
+
 Connector.playerSelector = '#app';
 
-Connector.artistSelector = '.playerContainer.columns.mini .player .player-song-artist';
+Connector.artistSelector = '.player-song-artist';
 
-Connector.trackSelector = '.playerContainer.columns.mini .player .player-song-title';
+Connector.trackSelector = '.player-song-title';
 
-Connector.isPlaying = () => $('.icon-music-pause-a') !== null;
+Connector.isPlaying = () => {
+	return $('#audio-player').attr('src') !== undefined;
+};
+
+Connector.applyFilter(filter);
+
+function trimSpaces(text) {
+	return MetadataFilter.filterWithFilterRules(text, filterRules);
+}

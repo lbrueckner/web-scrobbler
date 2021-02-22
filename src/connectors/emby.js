@@ -1,37 +1,57 @@
 'use strict';
 
+const trackArtSelector = '.nowPlayingBarInfoContainer .nowPlayingImage';
+
 Connector.playerSelector = '.nowPlayingBar';
 
-Connector.artistSelector = '.nowPlayingBarText .textActionButton[data-type="MusicArtist"]';
+Connector.artistSelector = '.nowPlayingBarText .nowPlayingBarSecondaryText';
 
-Connector.trackSelector = '.nowPlayingBarText .textActionButton[data-type="MusicAlbum"]';
+Connector.trackSelector = [
+	// Jellyfin v10.6.0 and newer
+	'.nowPlayingBarText div:nth-child(1) a',
+	// Emby or Jellyfin v10.5.0 and older
+	'.nowPlayingBarText .textActionButton',
+];
 
-Connector.trackArtSelector = '.nowPlayingBarInfoContainer .nowPlayingImage';
+Connector.trackArtSelector = trackArtSelector;
+
+Connector.timeInfoSelector = '.nowPlayingBarCenter .nowPlayingBarCurrentTime';
 
 Connector.isPlaying = () => {
-	return $('.nowPlayingBarCenter .playPauseButton .md-icon').text() === 'pause';
+	const playButtonLabel = Util.getTextFromSelectors(
+		'.nowPlayingBarCenter .playPauseButton i'
+	);
+	// Emby or Jellyfin v10.5.0 and older
+	if (playButtonLabel) {
+		return playButtonLabel === 'pause';
+	}
+
+	// Jellyfin v10.6.0 and newer
+	return document.querySelector('.playPauseButton .play_arrow') === null;
 };
 
-Connector.getCurrentTime = () => {
-	let text = $('.nowPlayingBarCenter .nowPlayingBarCurrentTime').text().split('/')[0];
-	return Util.stringToSeconds(text);
-};
+Connector.getTrackArt = () => {
+	const trackArtUrl = Util.extractImageUrlFromSelectors(trackArtSelector);
+	if (trackArtUrl) {
+		return trackArtUrl.replace(/height=\d+/, '');
+	}
 
-Connector.getDuration = () => {
-	let text = $('.nowPlayingBarCenter .nowPlayingBarCurrentTime').text().split('/')[1];
-	return Util.stringToSeconds(text);
-};
-
-Connector.getAlbum = () => {
-	return $('.detailSection .parentName:visible').text() === Connector.getArtist() ? $('.detailSection .itemName:visible').text() : null;
+	return null;
 };
 
 Connector.getUniqueID = () => {
-	let url = $('.nowPlayingBarInfoContainer .nowPlayingImage').css('background-image');
-	return /Items\/(\w+)/g.exec(url)[1];
+	const trackArtUrl = Util.extractImageUrlFromSelectors(trackArtSelector);
+	if (trackArtUrl) {
+		return /Items\/(\w+)/g.exec(trackArtUrl)[1];
+	}
+
+	return null;
 };
 
 Connector.isStateChangeAllowed = () => {
 	// prevents scrobble timer resetting when user changes view while playing a song
-	return Connector.getCurrentTime() === 0 || Connector.getCurrentTime() === Connector.getDuration();
+	return (
+		Connector.getCurrentTime() === 0 ||
+		Connector.getCurrentTime() === Connector.getDuration()
+	);
 };

@@ -1,74 +1,59 @@
 'use strict';
 
-Connector.playerSelector = '[class^="player-PlayerBar__bar-"]';
+const symphonySelector = '.player-PlayerInfo__infoEl--2jhHY span:nth-child(3) span:first-child';
+const commonNameSelector = '.player-PlayerInfo__infoEl--2jhHY span:nth-child(3) span:nth-child(2)';
+const directorSelector = '.player-PlayerInfo__recordingInfo--15VMv>span:first-child span';
+const trackSelector = '.player-PlayerInfo__infoEl--2jhHY';
+const pauseButtonSelector = '.player-PlayerControls__btn--1r-vy:nth-child(2) .util-IconLabel__component--3Uitr span';
 
-Connector.trackInfoSelector = `${Connector.playerSelector} [class^="player-PlayerInfo__infoEl-"]`;
+Connector.playerSelector = '.player-PlayerBar__bar--2yos_';
 
-Connector.getArtist = () => {
-	const container = $(Connector.trackInfoSelector).first();
-	return container.children().first().text();
-};
+Connector.artistSelector = '.player-PlayerInfo__infoEl--2jhHY span:first-child';
 
-Connector.getTrack = () => {
-	const container = $(Connector.trackInfoSelector).first();
-	const trackParts = container.children().slice(2).toArray();
+Connector.getTrack = getCurrentTrack;
 
-	return trackParts.map((part) => part.textContent).join('');
-};
+Connector.getAlbum = getCurrentSymphony;
 
-Connector.albumUrl = null;
-Connector.albumName = null;
-Connector.albumArt = null;
+Connector.currentTimeSelector = '.player-PlayerProgress__progress--2F0qB>span';
 
-Connector.getAlbumUrl = () => {
-	return $(`${Connector.playerSelector} a[class^="player-PlayerInfo__info-"]`).attr('href');
-};
+Connector.durationSelector = '.player-PlayerProgress__timeTotal--3aHlj span';
 
-Connector.loadAlbumData = (albumUrl) => {
-	$.ajax({
-		url: `https://www.idagio.com${albumUrl}`,
-		success: (data) => {
-			Connector.albumUrl = albumUrl;
+Connector.isPlaying = () => Util.getTextFromSelectors(pauseButtonSelector) === 'Pause';
 
-			const html = $.parseHTML(data);
-			Connector.albumName = $(html).find('h1').text();
+Connector.isScrobblingAllowed = () => Util.getTextFromSelectors('.player-PlayerInfo__recordingInfo--15VMv') !== 'Sponsor message';
 
-			Connector.albumArt = null;
-			const albumArtElement = html.find((element) => element.nodeName === 'META' && element.attributes.property && element.attributes.property.nodeValue === 'og:image');
-			if (albumArtElement && albumArtElement.attributes.content) {
-				Connector.albumArt = albumArtElement.attributes.content.nodeValue;
-			}
-		},
-		failure: () => {
-			Connector.albumUrl = albumUrl;
-			Connector.albumName = null;
-			Connector.albumArt = null;
-		}
-	});
-};
-
-Connector.getAlbum = () => {
-	const albumUrl = Connector.getAlbumUrl();
-
-	if (Connector.albumUrl !== albumUrl) {
-		Connector.loadAlbumData(albumUrl);
+function getCurrentTrack() {
+	/*
+	 * Idagio puts composer and piece all in the same div element, so we have to undo this.
+	 * First split the tag by dashes. Include spaces to avoid issues with names containing dashes.
+	 * The first part is the composer name. We want to exclude this, so we slice it off.
+	 * Then, replace the dashes with colons, this makes the tag more in line with what is expected.
+	 * Finally, trim as a "just in case" in preparation for the next step. Unnecessary in the cases I've seen, but extremely simple and might prevent something down the line.
+	 * Example from https://app.idagio.com/albums/saint-saens-violin-sonata-no-1-cello-sonata-no-1-and-piano-trio-no-2:
+	 * "Camille Saint-Saëns – Sonata for Violin and Piano No. 1 in D minor op. 75 R 123 – I. Allegro agitato –"
+	 * -> ["Camille Saint-Saëns", "Sonata for Violin and Piano No. 1 in D minor op. 75 R 123", "I. Allegro agitato –"]
+	 * -> ["Sonata for Violin and Piano No. 1 in D minor op. 75 R 123", "I. Allegro agitato –"]
+	 * -> "Sonata for Violin and Piano No. 1 in D minor op. 75 R 123: I. Allegro agitato –"
+	 */
+	let track = Util.getTextFromSelectors(trackSelector).split(' – ').slice(1).join(': ').trim();
+	/*
+	 * Now remove trailing dash if exists.
+	 * Example: "Sonata for Violin and Piano No. 1 in D minor op. 75 R 123: I. Allegro agitato –"
+	 * -> "Sonata for Violin and Piano No. 1 in D minor op. 75 R 123: I. Allegro agitato " (the space is trimmed later in core)
+	 */
+	if (track.slice(-1) === '–') {
+		track = track.slice(0, -1);
 	}
+	return track;
+}
 
-	return Connector.albumName;
-};
+function getCurrentSymphony() {
+	const symphonyShort = Util.getTextFromSelectors(symphonySelector).split(/ in [A-G]| op. [0-9]| KV [0-9]/)[0];
+	const commonName = Util.getTextFromSelectors(commonNameSelector) || '';
+	const director = removeParenthesis(Util.getTextFromSelectors(directorSelector));
+	return `${symphonyShort}${commonName} (${director})`;
+}
 
-Connector.getTrackArt = () => {
-	const albumUrl = Connector.getAlbumUrl();
-
-	if (Connector.albumUrl !== albumUrl) {
-		Connector.loadAlbumData(albumUrl);
-	}
-
-	return Connector.albumArt;
-};
-
-Connector.currentTimeSelector = '[class^="player-PlayerProgress__time-"]';
-
-Connector.durationSelector = '[class^="player-PlayerProgress__timeTotaltime-"]';
-
-Connector.isPlaying = () => $(`${Connector.playerSelector} span:contains("Pause")`).length > 0;
+function removeParenthesis(text) {
+	return text.replace(/\s*\(.*?\)\s*/g, '');
+}

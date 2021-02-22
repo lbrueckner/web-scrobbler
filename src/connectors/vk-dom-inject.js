@@ -1,7 +1,9 @@
 'use strict';
 
-// This script runs in non-isolated environment(vk.com itself)
-// for accessing to `window.ap` which sends player events
+/*
+ * This script runs in non-isolated environment(vk.com itself)
+ * for accessing to `window.ap` which sends player events.
+ */
 
 const INFO_ID = 0;
 const INFO_OWNER_ID = 1;
@@ -9,17 +11,18 @@ const INFO_TRACK = 3;
 const INFO_ARTIST = 4;
 const INFO_DURATION = 5;
 const INFO_TRACK_ARTS = 14;
+const INFO_ADDITIONAL = 16;
 
 setupEventListeners();
 
 function sendUpdateEvent(type) {
-	let audioObject = window.ap._currentAudio;
+	const audioObject = window.ap._currentAudio;
 	if (!audioObject) {
 		return;
 	}
 
-	let audioElImpl = window.ap._impl._currentAudioEl || {};
-	let { currentTime } = audioElImpl;
+	const audioElImpl = window.ap._impl._currentAudioEl || {};
+	const { currentTime } = audioElImpl;
 
 	/*
 	 * VK player sets current time equal to song duration on startup.
@@ -30,7 +33,13 @@ function sendUpdateEvent(type) {
 	if (currentTime === audioObject[INFO_DURATION]) {
 		return;
 	}
-	let trackArt = extractTrackArt(audioObject[INFO_TRACK_ARTS]);
+	const trackArt = extractTrackArt(audioObject[INFO_TRACK_ARTS]);
+
+	let track = audioObject[INFO_TRACK];
+	const additionalInfo = audioObject[INFO_ADDITIONAL];
+	if (additionalInfo) {
+		track = `${track} (${additionalInfo})`;
+	}
 
 	window.postMessage({
 		sender: 'web-scrobbler',
@@ -38,16 +47,16 @@ function sendUpdateEvent(type) {
 		trackInfo: {
 			currentTime,
 			trackArt,
+			track,
 			duration: audioObject[INFO_DURATION],
 			uniqueID: `${audioObject[INFO_OWNER_ID]}_${audioObject[INFO_ID]}`,
 			artist: audioObject[INFO_ARTIST],
-			track: audioObject[INFO_TRACK],
 		},
 	}, '*');
 }
 
 function setupEventListeners() {
-	for (let e of ['start', 'progress', 'pause', 'stop']) {
+	for (const e of ['start', 'progress', 'pause', 'stop']) {
 		window.ap.subscribers.push({
 			et: e,
 			cb: sendUpdateEvent.bind(null, e),
@@ -61,6 +70,6 @@ function setupEventListeners() {
  * @return {String} Track art URL
  */
 function extractTrackArt(trackArts) {
-	let trackArtArr = trackArts.split(',');
+	const trackArtArr = trackArts.split(',');
 	return trackArtArr.pop();
 }

@@ -26,7 +26,7 @@ function setupMainPagePlayer() {
 }
 
 function setupDefaultPlayer() {
-	const filter = new MetadataFilter({ artist: removeGenre });
+	const filter = MetadataFilter.createFilter({ artist: removeGenre });
 
 	Connector.playerSelector = '#playerWidget';
 
@@ -41,7 +41,7 @@ function setupDefaultPlayer() {
 	Connector.applyFilter(filter);
 
 	function removeGenre(text) {
-		let genre = $('.profile-name span').text();
+		const genre = $('.profile-name span').text();
 		return text.replace(genre, '');
 	}
 }

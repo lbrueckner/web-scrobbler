@@ -3,7 +3,7 @@
 /**
  * Artist, "Title"
  * Land of Talk, "What Was I Thinking?"
- * @type {RegEx}
+ * @type {Object}
  */
 const titleRegEx = /(.+?),\s["'](.+)["']/;
 
@@ -17,8 +17,8 @@ Connector.getArtistTrack = () => {
 	let artist = null;
 	let track = null;
 
-	let rawText = $('.item-current').text();
-	let result = rawText.match(titleRegEx);
+	const rawText = $('.audio-title').text();
+	const result = rawText.match(titleRegEx);
 	if (result) {
 		artist = result[1];
 		track = result[2];

@@ -1,15 +1,42 @@
 'use strict';
 
-Connector.playerSelector = '#player';
+let useShortTrackNames = false;
 
-Connector.trackArtSelector = '.js-footer-player-image';
+readConnectorOptions();
 
-Connector.trackSelector = `${Connector.playerSelector} [data-bind="title"]`;
+Connector.playerSelector = '#nowPlaying';
 
-Connector.artistSelector = `${Connector.playerSelector} [data-bind="artist"] a:first`;
+Connector.playButtonSelector = `${Connector.playerSelector} [class*="playbackToggle"]`;
 
-Connector.playButtonSelector = `${Connector.playerSelector} .play-controls__play`;
+Connector.isScrobblingAllowed = () => !!$(Connector.playButtonSelector);
 
-Connector.currentTimeSelector = '.js-progress';
+Connector.isPlaying = () => $(Connector.playButtonSelector).attr('data-test') === 'pause';
 
-Connector.durationSelector = '.js-duration';
+const fullTrackSelector = `${Connector.playerSelector} [class^="mediaInformation"] span:nth-child(1) a`;
+const shortTrackSelector = `${Connector.playerSelector} [class^="infoTableWrapper"] > table:nth-child(1) > tbody > tr:nth-child(1) > td:nth-child(2)`;
+
+Connector.getTrack = () => Util.getTextFromSelectors(useShortTrackNames ? shortTrackSelector : fullTrackSelector);
+
+Connector.getUniqueID = () => {
+	const trackUrl = $(fullTrackSelector).attr('href');
+	if (trackUrl) {
+		return trackUrl.split('/').pop();
+	}
+	return null;
+};
+
+Connector.artistSelector = `${Connector.playerSelector} [class^="mediaArtists"]`;
+
+Connector.albumSelector = `${Connector.playerSelector} [class^="infoTable--"] a[href^="/album/"]`;
+
+Connector.trackArtSelector = `${Connector.playerSelector} [class^="mediaImageryTrack"] img`;
+
+Connector.currentTimeSelector = `${Connector.playerSelector} [data-test="current-time"]`;
+
+Connector.durationSelector = `${Connector.playerSelector} [data-test="duration-time"]`;
+
+Connector.applyFilter(MetadataFilter.getTidalFilter());
+
+async function readConnectorOptions() {
+	useShortTrackNames = await Util.getOption('Tidal', 'useShortTrackNames');
+}

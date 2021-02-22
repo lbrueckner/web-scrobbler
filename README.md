@@ -1,78 +1,138 @@
-# Web Scrobbler
+<div align="center">
 
-[![Chrome Web Store][22]][1] [![AMO][23]][15] [![Build status][2]][3] [![devDependencies status][6]][7] [![Gitter][4]][5]
+<p>
+	<img width="128" src="./src/icons/icon_chrome_circle.svg"/>
+</p>
+<h1>Web Scrobbler</h1>
 
-Web Scrobbler is created for people who listen to music online through their browser, and would like to keep an updated playback history using [Last.fm][8]'s scrobbling service.
+[![Chrome Web Store][WebStoreBadge]][WebStore]
+[![Addons.mozilla.org][AmoBadge]][Amo]
+[![Microsoft Edge Addons][EdgeBadge]][Edge]
 
-Note that the extension also supports [Libre.fm][26] as a scrobbling service.
+[![Discord][DiscordBadge]][Discord]
+[![Test status][GitHubActionsBadge]][GitHubActions]
+[![Codacy Badge][CodacyBadge]][Codacy]
+[![Codacy Coverage Badge][CodacyCoverageBadge]][Codacy]
 
-For more information and discussion please visit [the extension page][12] on add0n.com website.
+</div>
 
-## Usage
+Web Scrobbler helps online music listeners to scrobble their playback history.
 
-You can get the extension either from Chrome Web Store or <abbr title="addons.mozilla.org">AMO</abbr> directly or by installing as an [unpacked extension][9].
+## Supported Services
+
+-   [Last.fm][LastFm]
+-   [Libre.fm][LibreFm]
+-   [ListenBrainz][ListenBrainz]
+-   [Maloja][Maloja]
+
+## Installation
+
+The extension can be either downloaded from stores, or installed as an [unpacked extension][DocsUnpacked].
 
 ### Chrome Web Store
 
-You can install it directly from [Chrome Web Store][1], if you use Chrome.
+It can be installed directly from the [Chrome Web Store][WebStore] for Chrome users.
 
-Opera users can install the extension from Chrome Web Store using the [Download Chrome Extension][13] addon for Opera.
+Opera users can install the extension from Chrome Web Store using the
+[Download Chrome Extension][DownloadChromeExt] addon for Opera.
 
-### Add-ons for Firefox
+### Addons.mozilla.org
 
-For those who prefer Firefox as a main browser, the extension is available [here][15].
+For those who prefer Firefox, the extension is available on [Addons.mozilla.org][Amo].
+
+### Microsoft Edge Add-ons
+
+The extension is also avaiable on the [Microsoft Edge Add-ons][Edge].
 
 ### Install from source code
 
-To install the extension from sources or zip file, read [this page][24] if you're on Chrome, or [this one][25] if you use Firefox.
+To install the extension from sources or zip file, read
+[this page][WikiUnpacked] if you're on Chrome, or [this one][WikiTempAddon]
+if you use Firefox.
 
 ## Development
 
-Check the [wiki page][10] to understand development of connectors. Please also read [contributions guidelines](.github/CONTRIBUTING.md).
+### Build the extension
 
-Join our [translation team][21] on Transifex.
+Before building the extension you should install dependencies:
 
-### Gitter
+```sh
+# Install dependencies
+> npm install
 
-We use gitter and you can join us @ [web-scrobbler/web-scrobbler][5].
+# Build the extension
+> npx grunt build:firefox
+# or
+> npx grunt build:chrome
+```
 
-## Used 3rd-party libraries
+The built extension is available in `build` directory. You can install it as an
+unpacked extension from this directory.
 
-* [Bootstrap v2.3.2][16]
-* [Font Awesome v4.7.0][17]
-* [jQuery v3.2.1][18]
-* [RequireJS v2.3.5][19]
+The detailed build instruction is available [here][BuildInstructions].
+
+### Develop connectors
+
+Check the [wiki page][WikiDev] to understand development of connectors. Please
+also read our [contribution guidelines][Contributing].
+
+### Translations
+
+We use Transifex to maintain translations. If you want to translate
+the extension, follow the [translations][Translations] wiki page for details.
+
+## Media
+
+Follow [@web_scrobbler][Twitter] on Twitter to receive the latest news and updates.
+
+Join the [Discord channel][Discord] to discuss the extension.
 
 ## Privacy Policy
 
-See the [privacy policy][11].
+See the [privacy policy][Privacy].
 
 ## License
 
-See the [license file](LICENSE.md).
+Licensed under the [MIT License][License].
 
-[1]: https://chrome.google.com/webstore/detail/lastfm-scrobbler/hhinaapppaileiechjoiifaancjggfjm
-[2]: https://api.travis-ci.org/web-scrobbler/web-scrobbler.svg
-[3]: https://travis-ci.org/web-scrobbler/web-scrobbler
-[4]: https://badges.gitter.im/Join%20Chat.svg
-[5]: https://gitter.im/david-sabata/web-scrobbler
-[6]: https://david-dm.org/web-scrobbler/web-scrobbler/dev-status.svg
-[7]: https://david-dm.org/web-scrobbler/web-scrobbler?type=dev
-[8]: http://www.last.fm/
-[9]: https://developer.chrome.com/extensions/getstarted#unpacked
-[10]: https://github.com/web-scrobbler/web-scrobbler/wiki/Connectors-development
-[11]: https://github.com/web-scrobbler/web-scrobbler/wiki/Privacy-policy
-[12]: http://add0n.com/lastfm-scrobbler.html
-[13]: https://addons.opera.com/extensions/details/app_id/kipjbhgniklcnglfaldilecjomjaddfi
-[15]: https://addons.mozilla.org/en-US/firefox/addon/web-scrobbler/
-[21]: https://www.transifex.com/web-scrobbler/web-scrobbler/dashboard/
-[22]: https://img.shields.io/chrome-web-store/v/hhinaapppaileiechjoiifaancjggfjm.svg
-[23]: https://img.shields.io/amo/v/web-scrobbler.svg
-[24]: https://github.com/web-scrobbler/web-scrobbler/wiki/Install-an-unpacked-extension
-[25]: https://github.com/web-scrobbler/web-scrobbler/wiki/Install-a-temporary-add-on
-[26]: https://libre.fm/
+<!-- Badges -->
+[AmoBadge]: https://img.shields.io/amo/v/web-scrobbler.svg?label=firefox&logo=firefox-browser&logoColor=white
+[CodacyBadge]: https://img.shields.io/codacy/grade/32658c34c5c542d9a315ead8d5eadd0e?logo=codacy&logoColor=white
+[CodacyCoverageBadge]: https://img.shields.io/codacy/coverage/32658c34c5c542d9a315ead8d5eadd0e?logo=codacy&logoColor=white
+[DiscordBadge]: https://img.shields.io/discord/716363971070001202?logo=discord&logoColor=white&color=7289dA
+[EdgeBadge]: https://img.shields.io/badge/dynamic/json?label=edge&logo=microsoft-edge&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fobiekdelmkmlgnhddmmnpnfhngejbnnc
+[GitHubActionsBadge]: https://img.shields.io/github/workflow/status/web-scrobbler/web-scrobbler/Test?label=test&logo=github&logoColor=white
+[WebStoreBadge]: https://img.shields.io/chrome-web-store/v/hhinaapppaileiechjoiifaancjggfjm.svg?label=chrome&logo=google-chrome&logoColor=white
 
-[16]: http://getbootstrap.com/2.3.2/assets/bootstrap.zip
-[17]: http://fontawesome.io/assets/font-awesome-4.7.0.zip
-[18]: http://code.jquery.com/jquery-3.2.1.min.js
-[19]: http://requirejs.org/docs/release/2.3.5/minified/require.js
+<!-- Docs -->
+[BuildInstructions]: https://github.com/web-scrobbler/web-scrobbler/wiki/Setup-development-environment
+[Contributing]: https://github.com/web-scrobbler/web-scrobbler/blob/master/.github/CONTRIBUTING.md
+[DocsUnpacked]: https://developer.chrome.com/extensions/getstarted#unpacked
+[License]: https://github.com/web-scrobbler/web-scrobbler/blob/master/LICENSE.md
+[Privacy]: https://github.com/web-scrobbler/web-scrobbler/blob/master/src/_locales/en/privacy.md
+[Translations]: https://github.com/web-scrobbler/web-scrobbler/wiki/Translate-the-extension
+
+<!-- Download -->
+[Amo]: https://addons.mozilla.org/en-US/firefox/addon/web-scrobbler/
+[Edge]: https://microsoftedge.microsoft.com/addons/detail/web-scrobbler/obiekdelmkmlgnhddmmnpnfhngejbnnc
+[WebStore]: https://chrome.google.com/webstore/detail/lastfm-scrobbler/hhinaapppaileiechjoiifaancjggfjm
+
+<!-- Other -->
+[DownloadChromeExt]: https://addons.opera.com/extensions/details/app_id/kipjbhgniklcnglfaldilecjomjaddfi
+
+<!-- Related pages -->
+[Codacy]: https://app.codacy.com/gh/web-scrobbler/web-scrobbler/dashboard
+[Discord]: https://discord.com/invite/u99wNWw
+[GitHubActions]: https://github.com/web-scrobbler/web-scrobbler/actions
+[Twitter]: https://twitter.com/web_scrobbler
+
+<!-- Services -->
+[LastFm]: http://www.last.fm/
+[LibreFm]: https://libre.fm/
+[ListenBrainz]: https://listenbrainz.org/
+[Maloja]: https://github.com/krateng/maloja
+
+<!-- Wiki pages -->
+[WikiDev]: https://github.com/web-scrobbler/web-scrobbler/wiki/Connectors-development
+[WikiTempAddon]: https://github.com/web-scrobbler/web-scrobbler/wiki/Install-a-temporary-add-on
+[WikiUnpacked]: https://github.com/web-scrobbler/web-scrobbler/wiki/Install-an-unpacked-extension
