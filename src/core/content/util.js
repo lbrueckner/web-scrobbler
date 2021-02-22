@@ -493,6 +493,7 @@ const Util = {
 	 */
 	/* istanbul ignore next */
 	debugLog(text, logType = 'log') {
+		if (logType === 'log'  ||  logType === 'info') return;
 		const logFunc = console[logType];
 
 		if (typeof logFunc !== 'function') {
