@@ -28,4 +28,3 @@ Connector.onScriptEvent = (event) => {
 
 Connector.injectScript('connectors/deezer-dom-inject.js');
 
-Connector.useMediaSessionApi();
